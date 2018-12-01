@@ -22,7 +22,7 @@ VRAM_OBJ_TILES  = $8000 ; OAM 1
 CGRAM_BG1       = $0000
 CGRAM_BG2       = $0010
 CGRAM_BG3       = $0020
-CGRAM_OBJ       = $0040
+CGRAM_OBJ       = $0080
 
 ;LORAM addresses
 
@@ -68,6 +68,7 @@ BUTTON_R         = $0010
 .segment "CODE"
 Main:
     RW a8i16
+
 
     ;Init shadow oam
     OAM_init SHADOW_OAM, $101, 0, 0
