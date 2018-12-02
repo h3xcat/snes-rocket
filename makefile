@@ -27,6 +27,8 @@ derived_files	+= data/font_ascii.png.tiles.lz4
 
 # Use --no-discard option for sprite sheets
 data/rocket_sprites.png.tiles: tiles_flags = -v --no-discard
+
+# We need this background to be unoptimized
 data/font_ascii.png.tiles: tiles_flags = -v --no-discard --no-flip --bpp 2 --tile-width 8 --tile-height 8
 
 # Include libSFX.make

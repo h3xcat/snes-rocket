@@ -21,7 +21,7 @@ VRAM_OBJ_TILES  = $8000 ; OAM 1
 ;CGRAM addresses
 CGRAM_BG1       = $0000
 CGRAM_BG2       = $0010
-CGRAM_BG3       = $0020
+CGRAM_BG3       = $0008
 CGRAM_OBJ       = $0080
 
 ;LORAM addresses
@@ -178,7 +178,7 @@ ProcessText:
     and #$000f
     adc #$80
     and #$ff
-    ;ora #$2000
+    ora #$0800
     sta SHADOW_BG3_MAP+6
     
     lda SFX_tick
@@ -190,14 +190,14 @@ ProcessText:
     lsr
     adc #$80
     and #$ff
-    ;ora #$2000
+    ora #$0800
     sta SHADOW_BG3_MAP+4
     
     lda SFX_tick+1
     and #$000f
     adc #$80
     and #$ff
-    ;ora #$2000
+    ora #$0800
     sta SHADOW_BG3_MAP+2
     
     lda SFX_tick+1
@@ -209,7 +209,7 @@ ProcessText:
     lsr
     adc #$80
     and #$ff
-    ;ora #$2000
+    ora #$0800
     sta SHADOW_BG3_MAP
 
 
