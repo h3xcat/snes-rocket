@@ -68,10 +68,10 @@ BUTTON_R         = $0010
 Main:
     RW a8i16
 
-    ;Init shadow oam
+    ; Init shadow oam
     OAM_init SHADOW_OAM, $101, 0, 0
 
-    ;Transfer and execute SPC file
+    ; Transfer and execute SPC file
     SMP_playspc SPC_STATE, SPC_IMAGE_LO, SPC_IMAGE_HI
 
     ; Transfer Tiles
@@ -97,22 +97,21 @@ Main:
 
     VRAM_memset VRAM_BG3_MAP, $0800, $00 ; Just fill with 0's
 
-
     ; Write palette data
     CGRAM_memcpy CGRAM_BG, DATA_BG_PALETTE, SIZE_BG_PALETTE
     CGRAM_memcpy CGRAM_OBJ, DATA_OBJ_PALETTE, SIZE_OBJ_PALETTE
 
-    ; SpriteSetup Table, SpriteID, PosX, PosY, Tile, N, Palette, Priority, FlipH, FlipV, Size
     SpriteSetup SHADOW_OAM, 0, 256/2-16, 224/2-16, 0, 0, 0, 3, 0, 0, 1
-    ;SpriteSetup SHADOW_OAM, 1, 256/2-16+$100, 224/2-16, 32, 0, 0, 3, 0, 0, 1
+    ; SpriteSetup SHADOW_OAM, 1, 256/2-16+$100, 224/2-16, 32, 0, 0, 3, 0, 0, 1
+    ; .macro SpriteSetup Table, SpriteID, PosX, PosY, Tile, N, Palette, Priority, FlipH, FlipV, Size
 
     .repeat RocksN, I
-        SpriteSetup SHADOW_OAM, (rocksIndex+I), .lobyte(I*24), ScreenBottom, $20+(I .mod 4)*2, 0, 0, I, I .mod 2, 0, 1
+        SpriteSetup SHADOW_OAM, (rocksIndex+I), .lobyte(I*24), ScreenBottom, $20+(I .mod 4)*2, 0, 0, 2, I .mod 2, 0, 1
     .endrepeat
 
 
     ;Set up screen mode
-    lda     #bgmode(BG_MODE_1, BG3_PRIO_NORMAL, BG_SIZE_8X8, BG_SIZE_8X8, BG_SIZE_8X8, 0)
+    lda     #bgmode(BG_MODE_1, BG3_PRIO_HIGH, BG_SIZE_8X8, BG_SIZE_8X8, BG_SIZE_8X8, 0)
     sta     BGMODE
     lda     #bgsc(VRAM_BG1_MAP, SC_SIZE_32X32)
     sta     BG1SC
@@ -128,6 +127,8 @@ Main:
     sta     OBJSEL
     lda     #tm(ON, ON, ON, OFF, ON)
     sta     TM
+
+    WRAM_memset SHADOW_BG3_MAP, $700, $00
 
 
     ;Set VBlank handler
@@ -160,7 +161,7 @@ VerticalBlank:
 
     ;Copy shadow OAM
     OAM_memcpy SHADOW_OAM
-    VRAM_memcpy VRAM_BG3_MAP, SHADOW_BG3_MAP, 128
+    VRAM_memcpy VRAM_BG3_MAP, SHADOW_BG3_MAP, $700
     rtl
 
 ;-------------------------------------------------------------------------------    
@@ -171,7 +172,7 @@ ProcessText:
     and #$000f
     adc #$80
     and #$ff
-    ora #$0400
+    ora #$2400
     sta SHADOW_BG3_MAP+6
     
     lda SFX_tick
@@ -183,14 +184,14 @@ ProcessText:
     lsr
     adc #$80
     and #$ff
-    ora #$0400
+    ora #$2400
     sta SHADOW_BG3_MAP+4
     
     lda SFX_tick+1
     and #$000f
     adc #$80
     and #$ff
-    ora #$0400
+    ora #$2400
     sta SHADOW_BG3_MAP+2
     
     lda SFX_tick+1
@@ -202,7 +203,7 @@ ProcessText:
     lsr
     adc #$80
     and #$ff
-    ora #$0400
+    ora #$2400
     sta SHADOW_BG3_MAP
 
 
@@ -226,7 +227,6 @@ ProcessBackground:
 
     tya
     eor #$ff
-    lda #$00
     sta BG1VOFS
     lda #$00
     sta BG1VOFS
@@ -372,15 +372,14 @@ FinishPlayerProcess:
     sty     Player1+Sprite::tile
 
     rts
+
 ;===============================================================================
 ;===============================================================================
-
-
 .segment "LORAM"
 SHADOW_OAM:    
-    .res 512+32
+    .res $220
 SHADOW_BG3_MAP:
-    .res 512
+    .res $700
 
 ;-------------------------------------------------------------------------------
 .segment "RODATA"
