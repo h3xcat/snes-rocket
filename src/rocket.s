@@ -9,19 +9,18 @@
 .include "RandomGen.i"
 
 ;VRAM addresses
-VRAM_BG1_MAP    = $1000
-VRAM_BG1_TILES  = $2000
-VRAM_BG2_MAP    = $3000
-VRAM_BG2_TILES  = $4000
-VRAM_BG3_MAP    = $5000
-VRAM_BG3_TILES  = $6000
+VRAM_BG1_TILES  = $0000
+VRAM_BG2_TILES  = $2000
+VRAM_BG3_TILES  = $4000
+
+VRAM_BG1_MAP    = $5000
+VRAM_BG2_MAP    = $5800
+VRAM_BG3_MAP    = $6000
 
 VRAM_OBJ_TILES  = $8000 ; OAM 1
 
 ;CGRAM addresses
-CGRAM_BG1       = $0000
-CGRAM_BG2       = $0010
-CGRAM_BG3       = $0008
+CGRAM_BG        = $0000
 CGRAM_OBJ       = $0080
 
 ;LORAM addresses
@@ -69,45 +68,39 @@ BUTTON_R         = $0010
 Main:
     RW a8i16
 
-
     ;Init shadow oam
     OAM_init SHADOW_OAM, $101, 0, 0
 
     ;Transfer and execute SPC file
     SMP_playspc SPC_STATE, SPC_IMAGE_LO, SPC_IMAGE_HI
 
-    ; Unload Background 1
+    ; Transfer Tiles
     LZ4_decompress DATA_BG1_TILES, EXRAM, y
     VRAM_memcpy VRAM_BG1_TILES, EXRAM, y
 
-    LZ4_decompress DATA_BG1_MAP, EXRAM, y
-    VRAM_memcpy VRAM_BG1_MAP, EXRAM, y
-
-    CGRAM_memcpy CGRAM_BG1, DATA_BG1_PALETTE, SIZE_BG1_PALETTE
-
-    ; Unload Background 2
     LZ4_decompress DATA_BG2_TILES, EXRAM, y
     VRAM_memcpy VRAM_BG2_TILES, EXRAM, y
 
-    LZ4_decompress DATA_BG2_MAP, EXRAM, y
-    VRAM_memcpy VRAM_BG2_MAP, EXRAM, y
-    
-    CGRAM_memcpy CGRAM_BG2, DATA_BG2_PALETTE, SIZE_BG2_PALETTE
-
-    ; Unload Background 3
     LZ4_decompress DATA_BG3_TILES, EXRAM, y   
     VRAM_memcpy VRAM_BG3_TILES, EXRAM, y
 
-    VRAM_memset VRAM_BG3_MAP, $1000, $00 ; Just fill with 0's
-
-    CGRAM_memcpy CGRAM_BG3, DATA_BG3_PALETTE, SIZE_BG3_PALETTE
-
-    ; Unload Sprites
     LZ4_decompress DATA_OBJ_TILES, EXRAM, y   
     VRAM_memcpy VRAM_OBJ_TILES, EXRAM, y
 
-    CGRAM_memcpy CGRAM_OBJ, DATA_OBJ_PALETTE, SIZE_OBJ_PALETTE
 
+    ; Transfer Maps
+    LZ4_decompress DATA_BG1_MAP, EXRAM, y
+    VRAM_memcpy VRAM_BG1_MAP, EXRAM, y
+
+    LZ4_decompress DATA_BG2_MAP, EXRAM, y
+    VRAM_memcpy VRAM_BG2_MAP, EXRAM, y
+
+    VRAM_memset VRAM_BG3_MAP, $0800, $00 ; Just fill with 0's
+
+
+    ; Write palette data
+    CGRAM_memcpy CGRAM_BG, DATA_BG_PALETTE, SIZE_BG_PALETTE
+    CGRAM_memcpy CGRAM_OBJ, DATA_OBJ_PALETTE, SIZE_OBJ_PALETTE
 
     ; SpriteSetup Table, SpriteID, PosX, PosY, Tile, N, Palette, Priority, FlipH, FlipV, Size
     SpriteSetup SHADOW_OAM, 0, 256/2-16, 224/2-16, 0, 0, 0, 3, 0, 0, 1
@@ -178,7 +171,7 @@ ProcessText:
     and #$000f
     adc #$80
     and #$ff
-    ora #$0800
+    ora #$0400
     sta SHADOW_BG3_MAP+6
     
     lda SFX_tick
@@ -190,14 +183,14 @@ ProcessText:
     lsr
     adc #$80
     and #$ff
-    ora #$0800
+    ora #$0400
     sta SHADOW_BG3_MAP+4
     
     lda SFX_tick+1
     and #$000f
     adc #$80
     and #$ff
-    ora #$0800
+    ora #$0400
     sta SHADOW_BG3_MAP+2
     
     lda SFX_tick+1
@@ -209,7 +202,7 @@ ProcessText:
     lsr
     adc #$80
     and #$ff
-    ora #$0800
+    ora #$0400
     sta SHADOW_BG3_MAP
 
 
@@ -392,44 +385,6 @@ SHADOW_BG3_MAP:
 ;-------------------------------------------------------------------------------
 .segment "RODATA"
 
-font_lookup:
-    .byt $00    ;   ' '
-    .byt $02    ;   '0'
-    .byt $04    ;   '1'
-    .byt $06    ;   '2'
-    .byt $08    ;   '3'
-    .byt $0a    ;   '4'
-    .byt $0c    ;   '5'
-    .byt $0e    ;   '6'
-    .byt $20    ;   '7'
-    .byt $22    ;   '8'
-    .byt $24    ;   '9'
-    .byt $26    ;   'A'
-    .byt $28    ;   'B'
-    .byt $2a    ;   'C'
-    .byt $2c    ;   'D'
-    .byt $2e    ;   'E'
-    .byt $40    ;   'F'
-    .byt $42    ;   'G'
-    .byt $44    ;   'H'
-    .byt $46    ;   'I'
-    .byt $48    ;   'J'
-    .byt $4a    ;   'K'
-    .byt $4c    ;   'L'
-    .byt $4e    ;   'M'
-    .byt $60    ;   'N'
-    .byt $62    ;   'O'
-    .byt $64    ;   'P'
-    .byt $66    ;   'Q'
-    .byt $68    ;   'R'
-    .byt $6a    ;   'S'
-    .byt $6c    ;   'T'
-    .byt $6e    ;   'U'
-    .byt $80    ;   'V'
-    .byt $82    ;   'X'
-    .byt $84    ;   'Y'
-    .byt $86    ;   'Z'
-    
 ;Import music
 .define SPC_FILE "data/music.spc"
 
@@ -439,23 +394,19 @@ SPC_STATE:
 
 ;Import graphics
 
+
 DATA_BG1_TILES:     .incbin  "data/background_1.png.tiles.lz4"
-DATA_BG1_MAP:       .incbin  "data/background_1.png.map.lz4"
-DATA_BG1_PALETTE:   .incbin  "data/background_1.png.palette"
-
 DATA_BG2_TILES:     .incbin  "data/background_2.png.tiles.lz4"
-DATA_BG2_MAP:       .incbin  "data/background_2.png.map.lz4"
-DATA_BG2_PALETTE:   .incbin  "data/background_2.png.palette"
-
-DATA_BG3_TILES:     .incbin  "data/font_ascii.png.tiles.lz4"
-DATA_BG3_PALETTE:   .incbin  "data/font_ascii.png.palette"
-
+DATA_BG3_TILES:     .incbin  "data/background_3.png.tiles.lz4"
 DATA_OBJ_TILES:     .incbin  "data/rocket_sprites.png.tiles.lz4"
+
+DATA_BG1_MAP:       .incbin  "data/background_1.png.map.lz4"
+DATA_BG2_MAP:       .incbin  "data/background_2.png.map.lz4"
+
+DATA_BG_PALETTE:   .incbin  "data/background_1.png.palette"
 DATA_OBJ_PALETTE:   .incbin  "data/rocket_sprites.png.palette"
 
-SIZE_BG1_PALETTE = .sizeof(DATA_BG1_PALETTE)
-SIZE_BG2_PALETTE = .sizeof(DATA_BG2_PALETTE)
-SIZE_BG3_PALETTE = .sizeof(DATA_BG3_PALETTE)
+SIZE_BG_PALETTE = .sizeof(DATA_BG_PALETTE)
 SIZE_OBJ_PALETTE = .sizeof(DATA_OBJ_PALETTE)
 
 .segment "ROM2"
