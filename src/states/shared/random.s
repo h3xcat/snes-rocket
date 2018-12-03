@@ -1,5 +1,5 @@
 .include "libsfx.i"
-.include "RandomGen.i"
+.include "random.i"
 
 .segment "CODE"
 

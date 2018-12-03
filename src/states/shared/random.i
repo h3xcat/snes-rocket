@@ -1,5 +1,6 @@
-.ifndef ::__RANDOM_GEN__
-::__RANDOM_GEN__ = 1
+.ifndef ::__RANDOM__
+::__RANDOM__ = 1
+
 .global RandomByteSub
 
 .macro RandomByte
@@ -30,6 +31,4 @@
 	RW_pull
 .endmacro
 
-
-
-.endif; __RANDOM_GEN__
+.endif; __RANDOM__
