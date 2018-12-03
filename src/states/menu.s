@@ -71,7 +71,8 @@ GAMESTATE_END   = $03
 StatesMenuInit:
     RW_assume a8i16
     jsr LoadData
-    jsr LoadAscii
+
+
 	rts
 
 StatesMenuLoop:
@@ -79,6 +80,7 @@ StatesMenuLoop:
 	
     jsr ProcessText
 
+    WRAM_memcpy (SHADOW_BG3_MAP+8*(2*32)+10*(2)), TXT_TITLE, TXT_TITLE_SIZE
     VRAM_memcpy VRAM_BG3_MAP, SHADOW_BG3_MAP, $700
 
 	rtl
@@ -215,5 +217,14 @@ ProcessText:
 ;===============================================================================
 .segment "RODATA"
 
-TXT_TITLE: .asciiz    "Rocket Dodge"
+.macro  AsciiText Text, Param
+    .repeat .strlen(Text), I
+        .byte .strat(Text, I)
+        .byte (Param)
+    .endrep
+.endmacro
 
+TXT_TITLE: AsciiText "Rocket Dodge", $24
+TXT_TITLE_END:
+
+TXT_TITLE_SIZE = TXT_TITLE_END-TXT_TITLE

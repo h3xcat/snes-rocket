@@ -1,9 +1,3 @@
-; Hello
-; David Lindecrantz <optiroc@gmail.com>
-;
-; Example using the Mouse package to control two animated sprites
-; using either mouse or joypad in either port
-
 .include "libSFX.i"
 .include "main.i"
 .include "states/menu.i"
@@ -41,14 +35,14 @@ DATA_BG_STARS2_TILES:   .incbin  "data/bg_stars2.png.tiles.lz4"
 DATA_BG_ASCII_TILES:    .incbin  "data/bg_ascii.png.tiles.lz4"
 DATA_FG_SPRITES_TILES:  .incbin  "data/fg_sprites.png.tiles.lz4"
 
-DATA_BG_STARS1_MAP: .incbin  "data/bg_stars1.png.map.lz4"
-DATA_BG_STARS2_MAP: .incbin  "data/bg_stars2.png.map.lz4"
+DATA_BG_STARS1_MAP: 	.incbin  "data/bg_stars1.png.map.lz4"
+DATA_BG_STARS2_MAP: 	.incbin  "data/bg_stars2.png.map.lz4"
 
-DATA_BG_PALETTE:    .incbin  "data/bg_stars1.png.palette"
-DATA_FG_PALETTE:   .incbin  "data/fg_sprites.png.palette"
+DATA_BG_PALETTE:    	.incbin  "data/bg_stars1.png.palette"
+DATA_FG_PALETTE:   		.incbin  "data/fg_sprites.png.palette"
 
-SIZE_BG_PALETTE     = .sizeof(DATA_BG_PALETTE)
-SIZE_FG_PALETTE     = .sizeof(DATA_FG_PALETTE)
+SIZE_BG_PALETTE     	= .sizeof(DATA_BG_PALETTE)
+SIZE_FG_PALETTE     	= .sizeof(DATA_FG_PALETTE)
 
 .segment "ROM2"
 SPC_IMAGE_LO:
