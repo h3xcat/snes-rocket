@@ -25,32 +25,6 @@ VRAM_OBJ_TILES  = $8000
 CGRAM_BG        = $0000
 CGRAM_OBJ       = $0080
 
-
-.define ScreenTop       239
-.define ScreenBottom    224
-
-.define RocksN  32
-
-.struct Sprite
-    posX    .byte
-    posY    .byte
-    tile    .byte
-    other   .byte
-.endstruct
-
-
-
-.define rocksIndex      4; Rocks must be alligned to 16 bytes(n*4 sprites)
-
-.define Player1         SHADOW_OAM+0
-.define player2         SHADOW_OAM+4
-; 8 byte(2 sprite) padding
-.define rocks           SHADOW_OAM+(rocksIndex*4) 
-
-
-
-
-
 .macro WriteAscii Target, PosX, PosY, Param, Text
     RW_push
     RW a8i16
@@ -70,9 +44,6 @@ StatesMenuInit:
     jsr LoadText
     rts
 
-    ;
-
-
 StatesMenuLoop:
     RW a8i16
 
@@ -82,12 +53,10 @@ StatesMenuLoop:
 
 	rts
 
-
 ;===============================================================================
 ;===============================================================================
 ProcessInput:
-    RW_assume a8i16
-    RW a16
+    RW a16i16
     
     lda MENU_SELECTION
     asl
@@ -134,7 +103,15 @@ ProcessInputEnd:
     sta SHADOW_BG3_MAP, x
 
 
+    ldy z:SFX_joy1trig
+    cpy #BUTTON_B
+    bne NoSwitch
     RW a8
+    lda MENU_SELECTION
+    sta GAME_STATE
+NoSwitch:
+
+    RW a8i16
     rts
 ;===============================================================================
 ;===============================================================================
@@ -142,49 +119,48 @@ LoadData:
     RW a8i16
     
     ; Init shadow oam
-    OAM_init SHADOW_OAM, $101, 1, 1
+    ;OAM_init SHADOW_OAM, $101, 1, 1
 
-    ; Transfer and execute SPC file
-    SMP_playspc SPC_STATE, SPC_IMAGE_LO, SPC_IMAGE_HI
+
 
     ; Transfer Tiles
-    LZ4_decompress DATA_BG_STARS1_TILES, EXRAM, y
-    VRAM_memcpy VRAM_BG1_TILES, EXRAM, y
+    ;LZ4_decompress DATA_BG_STARS1_TILES, EXRAM, y
+    ;VRAM_memcpy VRAM_BG1_TILES, EXRAM, y
 
-    LZ4_decompress DATA_BG_STARS2_TILES, EXRAM, y
-    VRAM_memcpy VRAM_BG2_TILES, EXRAM, y
+    ;LZ4_decompress DATA_BG_STARS2_TILES, EXRAM, y
+    ;VRAM_memcpy VRAM_BG2_TILES, EXRAM, y
 
     LZ4_decompress DATA_BG_ASCII_TILES, EXRAM, y   
     VRAM_memcpy VRAM_BG3_TILES, EXRAM, y
 
-    LZ4_decompress DATA_FG_SPRITES_TILES, EXRAM, y   
-    VRAM_memcpy VRAM_OBJ_TILES, EXRAM, y
+    ;LZ4_decompress DATA_FG_SPRITES_TILES, EXRAM, y   
+    ;VRAM_memcpy VRAM_OBJ_TILES, EXRAM, y
 
 
     ; Transfer Maps
-    LZ4_decompress DATA_BG_STARS1_MAP, EXRAM, y
-    VRAM_memcpy VRAM_BG1_MAP, EXRAM, y
+    ;LZ4_decompress DATA_BG_STARS1_MAP, EXRAM, y
+    ;VRAM_memcpy VRAM_BG1_MAP, EXRAM, y
 
-    LZ4_decompress DATA_BG_STARS2_MAP, EXRAM, y
-    VRAM_memcpy VRAM_BG2_MAP, EXRAM, y
+    ;LZ4_decompress DATA_BG_STARS2_MAP, EXRAM, y
+    ;VRAM_memcpy VRAM_BG2_MAP, EXRAM, y
 
     VRAM_memset VRAM_BG3_MAP, $0800, $00 ; Just fill with 0's
 
     ; Write palette data
     CGRAM_memcpy CGRAM_BG, DATA_BG_PALETTE, SIZE_BG_PALETTE
-    CGRAM_memcpy CGRAM_OBJ, DATA_FG_PALETTE, SIZE_FG_PALETTE
+    ;CGRAM_memcpy CGRAM_OBJ, DATA_FG_PALETTE, SIZE_FG_PALETTE
 
     ;Set up screen mode
     lda     #bgmode(BG_MODE_1, BG3_PRIO_HIGH, BG_SIZE_8X8, BG_SIZE_8X8, BG_SIZE_8X8, 0)
     sta     BGMODE
-    lda     #bgsc(VRAM_BG1_MAP, SC_SIZE_32X32)
-    sta     BG1SC
-    lda     #bgsc(VRAM_BG2_MAP, SC_SIZE_32X32)
-    sta     BG2SC
+    ;lda     #bgsc(VRAM_BG1_MAP, SC_SIZE_32X32)
+    ;sta     BG1SC
+    ;lda     #bgsc(VRAM_BG2_MAP, SC_SIZE_32X32)
+    ;sta     BG2SC
     lda     #bgsc(VRAM_BG3_MAP, SC_SIZE_32X32)
     sta     BG3SC
 
-    ldx     #bgnba(VRAM_BG1_TILES, VRAM_BG2_TILES, VRAM_BG3_TILES, 0)
+    ldx     #bgnba(0, 0, VRAM_BG3_TILES, 0)
     stx     BG12NBA
 
     lda     #objsel(VRAM_OBJ_TILES, OBJ_8x8_16x16, 0)
@@ -264,6 +240,7 @@ MENU_SELECTION:
     .res 1
 
 .segment "RODATA"
+
 BG3_FRAME:
 .word $2450, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2452
 .word $2460, $242b, $2442, $2436, $243e, $2438, $2447, $2400, $2467, $2400, $2462

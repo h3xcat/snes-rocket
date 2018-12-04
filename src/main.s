@@ -7,41 +7,127 @@
 .segment "CODE"
 Main:
     RW a8i16
-    jsr StatesMenuInit
 
+    ; Transfer and execute SPC file
+    SMP_playspc SPC_STATE, SPC_IMAGE_LO, SPC_IMAGE_HI
 
-    ;Set VBlank handler
+    lda #$ff
+    sta GAME_STATE_LAST
+
+    lda #GAMESTATE_MENU
+    sta GAME_STATE
+
     VBL_set VerticalBlank
-    ;Turn on screen
-    lda     #inidisp(ON, DISP_BRIGHTNESS_MAX)
-    sta     SFX_inidisp
     VBL_on
-:   wai
-    bra     :-
-
-    ;jsr StatesGameInit
-    rtl
 
 VerticalBlank:
     RW a8i16
-	jsr StatesMenuLoop
-	rtl
+    ; Check is state changed
+    lda GAME_STATE
+    cmp GAME_STATE_LAST
+    beq RunStateLoop
+    jsr SwitchGameState
+RunStateLoop:
+
+    lda GAME_STATE
+
+LoopCheckStateGame:
+    cmp #GAMESTATE_GAME
+    bne LoopCheckStateScore
+    jsr StatesGameLoop
+    jmp LoopCheckEnd
+LoopCheckStateScore:
+    cmp #GAMESTATE_SCORE
+    bne LoopCheckStateCredits
+    jsr StatesMenuLoop
+    jmp LoopCheckEnd
+LoopCheckStateCredits:
+    cmp #GAMESTATE_CREDITS
+    bne LoopCheckStateBonus
+    jsr StatesMenuLoop
+    jmp LoopCheckEnd
+LoopCheckStateBonus:
+    cmp #GAMESTATE_BONUS
+    bne LoopCheckStateMenu
+    jsr StatesMenuLoop
+    jmp LoopCheckEnd
+LoopCheckStateMenu:
+    cmp #GAMESTATE_MENU
+    bne LoopCheckEnd
+    jsr StatesMenuLoop
+    jmp LoopCheckEnd
+LoopCheckEnd:
+
+    rtl
 
 ;===============================================================================
+SwitchGameState:
+    RW a8i16
+
+    VBL_off
+
+
+
+    lda GAME_STATE
+    sta GAME_STATE_LAST
+
+InitCheckStateGame:
+    cmp #GAMESTATE_GAME
+    bne InitCheckStateScore
+    jsr StatesGameInit
+    jmp InitCheckEnd
+InitCheckStateScore:
+    cmp #GAMESTATE_SCORE
+    bne InitCheckStateCredits
+    jsr StatesMenuInit
+    jmp InitCheckEnd
+InitCheckStateCredits:
+    cmp #GAMESTATE_CREDITS
+    bne InitCheckStateBonus
+    jsr StatesMenuInit
+    jmp InitCheckEnd
+InitCheckStateBonus:
+    cmp #GAMESTATE_BONUS
+    bne InitCheckStateMenu
+    jsr StatesMenuInit
+    jmp InitCheckEnd
+InitCheckStateMenu:
+    cmp #GAMESTATE_MENU
+    bne InitCheckEnd
+    jsr StatesMenuInit
+    jmp InitCheckEnd
+InitCheckEnd:
+
+
+
+    VBL_on
+
+    lda     #inidisp(ON, DISP_BRIGHTNESS_MAX)
+    sta     SFX_inidisp
+:   wai
+    bra     :-
+    
+
+    rts
+;===============================================================================
 .segment "LORAM"
+GAME_STATE:    
+    .res $1
+GAME_STATE_LAST:    
+    .res $1
 SHADOW_OAM:    
     .res $220
 SHADOW_BG3_MAP:
     .res $700
+JUMP_TABLE_PTR:
+    .res $2
 
 ;===============================================================================
 ;===============================================================================
 .segment "RODATA"
-
 ;Import music
 .define SPC_FILE "data/music_main.spc"
 
-.segment "RODATA"
 SPC_STATE:
     SPC_incbin_state SPC_FILE
 

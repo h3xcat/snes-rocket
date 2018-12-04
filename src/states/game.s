@@ -49,13 +49,11 @@ CGRAM_OBJ       = $0080
 .segment "CODE"
 
 StatesGameInit:
-    RW_assume a8i16
+    RW a8i16
 
     ; Init shadow oam
     OAM_init SHADOW_OAM, $101, 0, 0
 
-    ; Transfer and execute SPC file
-    SMP_playspc SPC_STATE, SPC_IMAGE_LO, SPC_IMAGE_HI
 
     ; Transfer Tiles
     LZ4_decompress DATA_BG_STARS1_TILES, EXRAM, y
@@ -117,7 +115,7 @@ StatesGameInit:
 	rts
 
 StatesGameLoop:
-	RW a8i8
+	RW a8i16
 	
     jsr ProcessBackground
     jsr ProcessPlayer
@@ -132,7 +130,6 @@ StatesGameLoop:
 ;===============================================================================
 ;===============================================================================
 ProcessText:
-    RW_assume a8i8
     RW a16i16
     lda SFX_tick
     and #$000f
@@ -173,13 +170,11 @@ ProcessText:
     sta SHADOW_BG3_MAP
 
 
-    RW a8i8
+    RW a8i16
     rts
 ;-------------------------------------------------------------------------------    
 ProcessBackground:
-    RW_assume a8i8
-
-    RW a16
+    RW a16i8
     lda SFX_tick
     lsr
     tay
@@ -197,13 +192,11 @@ ProcessBackground:
     lda #$00
     sta BG1VOFS
 
-
+    RW a8i16
     rts
 
 ;-------------------------------------------------------------------------------
 ProcessRocks:
-    RW_assume a8i8
-
     RW a16i16
 
     
@@ -274,10 +267,8 @@ RockEnabled:
     sbc #12
     bpl CollisionCheckEnd    
 Collision:
-    lda SHADOW_OAM+Sprite::posY, y
-    sta Player1+Sprite::posY
-    lda SHADOW_OAM+Sprite::posX, y
-    sta Player1+Sprite::posX
+    lda #GAMESTATE_MENU
+    sta GAME_STATE
 CollisionCheckEnd:
 
     RW a16
@@ -291,7 +282,7 @@ RockLoopContinue:
 
 ;-------------------------------------------------------------------------------
 ProcessPlayer:
-    RW_assume a8i8
+    RW a8i8
 
     ldy     Player1+Sprite::tile
 
@@ -337,12 +328,9 @@ FinishPlayerProcess:
 
     sty     Player1+Sprite::tile
 
+    RW a8i16
     rts
 
 ;===============================================================================
 ;===============================================================================
 .segment "LORAM"
-GAME_SCORE:
-    .res $2
-GAME_STATE:
-    .res $1
