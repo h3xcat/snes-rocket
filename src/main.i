@@ -23,6 +23,7 @@
 .global SIZE_FG_PALETTE : absolute
 
 .global GAME_STATE
+.global GAME_SCORE_BCD
 
 ;JOY BIT MASKS
 BUTTON_B        = $8000

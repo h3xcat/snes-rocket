@@ -111,15 +111,19 @@ StatesGameInit:
 
     WRAM_memset SHADOW_BG3_MAP, $700, $00
 
-
+    ldy #$0000
+    sty GAME_SCORE_BCD 
+    lda #$01
+    sta GAME_LEVEL 
 	rts
 
 StatesGameLoop:
 	RW a8i16
 	
     jsr ProcessBackground
-    jsr ProcessPlayer
+    jsr ProcessInput
     jsr ProcessRocks
+    jsr ProcessScore
     jsr ProcessText
 
     OAM_memcpy SHADOW_OAM
@@ -129,16 +133,44 @@ StatesGameLoop:
 
 ;===============================================================================
 ;===============================================================================
-ProcessText:
+ProcessScore:
     RW a16i16
     lda SFX_tick
+    and #$000f
+    cmp #$000f
+    bne SkipScoreIncrease
+    lda GAME_SCORE_BCD
+    clc
+    adc #$01
+    sta GAME_SCORE_BCD
+    and #$ffe0
+    clc
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    
+    clc
+    adc #$01
+    sta GAME_LEVEL
+
+SkipScoreIncrease:
+
+    RW a8i16
+    rts
+;===============================================================================
+;===============================================================================
+ProcessText:
+    RW a16i16
+    lda GAME_SCORE_BCD
     and #$000f
     adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+6
     
-    lda SFX_tick
+    lda GAME_SCORE_BCD
     and #$00f0
     sec
     lsr
@@ -150,14 +182,14 @@ ProcessText:
     ora #$2400
     sta SHADOW_BG3_MAP+4
     
-    lda SFX_tick+1
+    lda GAME_SCORE_BCD+1
     and #$000f
     adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+2
     
-    lda SFX_tick+1
+    lda GAME_SCORE_BCD+1
     and #$00f0
     sec
     lsr
@@ -174,20 +206,20 @@ ProcessText:
     rts
 ;-------------------------------------------------------------------------------    
 ProcessBackground:
-    RW a16i8
-    lda SFX_tick
+    RW a8i8
+
+    lda BG_OFFSET
+    sec
+    sbc GAME_LEVEL
+    sta BG_OFFSET
+
+
     lsr
-    tay
-    lsr
-    RW a8
-    
-    eor #$ff
     sta BG2VOFS
     lda #$00
     sta BG2VOFS
 
-    tya
-    eor #$ff
+    lda BG_OFFSET
     sta BG1VOFS
     lda #$00
     sta BG1VOFS
@@ -240,8 +272,8 @@ RockEnabled:
     RW a8
 
     ; Incrament position
-    sec
-    inc
+    clc
+    adc GAME_LEVEL
     sta SHADOW_OAM+Sprite::posY, y
     clc
 
@@ -281,7 +313,7 @@ RockLoopContinue:
     rts
 
 ;-------------------------------------------------------------------------------
-ProcessPlayer:
+ProcessInput:
     RW a8i8
 
     ldy     Player1+Sprite::tile
@@ -289,11 +321,21 @@ ProcessPlayer:
     RW a16i16
     lda     z:SFX_joy1cont
 
+    ldx     #0 ; Boost
+
+CheckKeyB:
+    bit     #BUTTON_B
+    beq     CheckKeyUp
+    ldx     #1
+
 CheckKeyUp:
     bit     #BUTTON_UP
     beq     CheckKeyDown
     ldy     #0
-    RW a8
+    RW a8     
+    dec     Player1+Sprite::posY
+    cpx     #1
+    bne     FinishPlayerProcess
     dec     Player1+Sprite::posY
     jmp     FinishPlayerProcess
 
@@ -304,6 +346,9 @@ CheckKeyDown:
     ldy     #6
     RW a8
     inc     Player1+Sprite::posY
+    cpx     #1
+    bne     FinishPlayerProcess
+    inc     Player1+Sprite::posY
     jmp     FinishPlayerProcess
 
 CheckKeyLeft:
@@ -313,6 +358,9 @@ CheckKeyLeft:
     ldy     #4
     RW a8
     dec     Player1+Sprite::posX
+    cpx     #1
+    bne     FinishPlayerProcess
+    dec     Player1+Sprite::posX
     jmp     FinishPlayerProcess
 
 SkipLeft:
@@ -321,6 +369,9 @@ SkipLeft:
     beq     FinishPlayerProcess
     ldy     #2
     RW a8
+    inc     Player1+Sprite::posX
+    cpx     #1
+    bne     FinishPlayerProcess
     inc     Player1+Sprite::posX
 
 FinishPlayerProcess:
@@ -334,3 +385,13 @@ FinishPlayerProcess:
 ;===============================================================================
 ;===============================================================================
 .segment "LORAM"
+GAME_SCORE_BCD:
+    .res 2
+
+GAME_LEVEL:
+    .res 1
+
+SOMETHING:
+    .res 1
+BG_OFFSET:
+    .res 1

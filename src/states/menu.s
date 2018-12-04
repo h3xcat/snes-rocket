@@ -57,7 +57,7 @@ StatesMenuLoop:
 ;===============================================================================
 ProcessInput:
     RW a16i16
-    
+
     lda MENU_SELECTION
     asl
     asl
@@ -88,8 +88,9 @@ InputCheckDown:
 
 ProcessInputEnd:
     lda MENU_SELECTION
+
     and #$0003
-    sta MENU_SELECTION    
+    sta MENU_SELECTION  
     asl
     asl
     asl
@@ -191,14 +192,14 @@ LoadText:
 ;===============================================================================
 ProcessText:
     RW a16i16
-    lda SFX_tick
+    lda GAME_SCORE_BCD
     and #$000f
     adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+6
     
-    lda SFX_tick
+    lda GAME_SCORE_BCD
     and #$00f0
     sec
     lsr
@@ -210,14 +211,14 @@ ProcessText:
     ora #$2400
     sta SHADOW_BG3_MAP+4
     
-    lda SFX_tick+1
+    lda GAME_SCORE_BCD+1
     and #$000f
     adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+2
     
-    lda SFX_tick+1
+    lda GAME_SCORE_BCD+1
     and #$00f0
     sec
     lsr
