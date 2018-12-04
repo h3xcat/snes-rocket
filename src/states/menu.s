@@ -7,6 +7,7 @@
 
 
 
+
 ;===============================================================================
 ;===============================================================================
 ;VRAM addresses
@@ -24,24 +25,6 @@ VRAM_OBJ_TILES  = $8000
 CGRAM_BG        = $0000
 CGRAM_OBJ       = $0080
 
-;JOY BIT MASKS
-BUTTON_B        = $8000
-BUTTON_Y        = $4000
-BUTTON_SELECT   = $2000
-BUTTON_START    = $1000
-BUTTON_UP       = $0800
-BUTTON_DOWN     = $0400
-BUTTON_LEFT     = $0200
-BUTTON_RIGHT    = $0100
-BUTTON_A        = $0080
-BUTTON_X        = $0040
-BUTTON_L        = $0020
-BUTTON_R        = $0010
-
-GAMESTATE_START = $00
-GAMESTATE_SCORE = $01
-GAMESTATE_GAME  = $02
-GAMESTATE_END   = $03
 
 .define ScreenTop       239
 .define ScreenBottom    224
@@ -64,34 +47,102 @@ GAMESTATE_END   = $03
 ; 8 byte(2 sprite) padding
 .define rocks           SHADOW_OAM+(rocksIndex*4) 
 
+
+
+
+
+.macro WriteAscii Target, PosX, PosY, Param, Text
+    RW_push
+    RW a8i16
+    .repeat .strlen(Text), I
+        ldx #( ((Param) << 8) + (.strat(Text,I)&$ff) )
+        stx Target+(PosY)*(2*32)+((PosX)+I)*(2)
+    .endrepeat
+    RW_pull
+.endmacro
 ;===============================================================================
 ;===============================================================================
 .segment "CODE"
 
 StatesMenuInit:
-    RW_assume a8i16
+    RW a8i16
     jsr LoadData
+    jsr LoadText
+    rts
 
+    ;
+
+
+StatesMenuLoop:
+    RW a8i16
+
+	jsr ProcessInput
+    jsr ProcessText
+    VRAM_memcpy VRAM_BG3_MAP, SHADOW_BG3_MAP, $700
 
 	rts
 
-StatesMenuLoop:
-	RW a8i8
-	
-    jsr ProcessText
 
-    WRAM_memcpy (SHADOW_BG3_MAP+8*(2*32)+10*(2)), TXT_TITLE, TXT_TITLE_SIZE
-    VRAM_memcpy VRAM_BG3_MAP, SHADOW_BG3_MAP, $700
+;===============================================================================
+;===============================================================================
+ProcessInput:
+    RW_assume a8i16
+    RW a16
+    
+    lda MENU_SELECTION
+    asl
+    asl
+    asl
+    asl
+    asl
+    asl
+    adc #(12*(32*2)+11*2) 
+    tax
 
-	rtl
+    lda #$2400
+    sta SHADOW_BG3_MAP, x
 
+InputCheckUp:
+    ldy z:SFX_joy1trig
+    cpy #BUTTON_UP
+    bne InputCheckDown
+
+    dec MENU_SELECTION
+    jmp ProcessInputEnd
+
+InputCheckDown:
+    ldy z:SFX_joy1trig
+    cpy #BUTTON_DOWN
+    bne ProcessInputEnd
+
+    inc MENU_SELECTION
+
+ProcessInputEnd:
+    lda MENU_SELECTION
+    and #$0003
+    sta MENU_SELECTION    
+    asl
+    asl
+    asl
+    asl
+    asl
+    asl
+    adc #(12*(32*2)+11*2) 
+    tax
+
+    lda #$244e
+    sta SHADOW_BG3_MAP, x
+
+
+    RW a8
+    rts
 ;===============================================================================
 ;===============================================================================
 LoadData:
-    RW_assume a8i16
+    RW a8i16
     
     ; Init shadow oam
-    OAM_init SHADOW_OAM, $101, 0, 0
+    OAM_init SHADOW_OAM, $101, 1, 1
 
     ; Transfer and execute SPC file
     SMP_playspc SPC_STATE, SPC_IMAGE_LO, SPC_IMAGE_HI
@@ -123,15 +174,6 @@ LoadData:
     CGRAM_memcpy CGRAM_BG, DATA_BG_PALETTE, SIZE_BG_PALETTE
     CGRAM_memcpy CGRAM_OBJ, DATA_FG_PALETTE, SIZE_FG_PALETTE
 
-    SpriteSetup SHADOW_OAM, 0, 256/2-16, 224/2-16, 0, 0, 0, 3, 0, 0, 1
-    ; SpriteSetup SHADOW_OAM, 1, 256/2-16+$100, 224/2-16, 32, 0, 0, 3, 0, 0, 1
-    ; .macro SpriteSetup Table, SpriteID, PosX, PosY, Tile, N, Palette, Priority, FlipH, FlipV, Size
-
-    .repeat RocksN, I
-        SpriteSetup SHADOW_OAM, (rocksIndex+I), .lobyte(I*24), ScreenBottom, $20+(I .mod 4)*2, 0, 0, 2, I .mod 2, 0, 1
-    .endrepeat
-
-
     ;Set up screen mode
     lda     #bgmode(BG_MODE_1, BG3_PRIO_HIGH, BG_SIZE_8X8, BG_SIZE_8X8, BG_SIZE_8X8, 0)
     sta     BGMODE
@@ -147,33 +189,35 @@ LoadData:
 
     lda     #objsel(VRAM_OBJ_TILES, OBJ_8x8_16x16, 0)
     sta     OBJSEL
-    lda     #tm(ON, ON, ON, OFF, ON)
-    sta     TM
-
-    ;Set VBlank handler
-    VBL_set StatesMenuLoop
-
-    ;Turn on screen
-    lda     #inidisp(ON, DISP_BRIGHTNESS_MAX)
-    sta     SFX_inidisp
-    VBL_on
-:   wai
-    bra     :-
-    WRAM_memset SHADOW_BG3_MAP, $700, $00
-    
+    lda     #tm(OFF, OFF, ON, OFF, OFF)
+    sta     TM    
     rts
 
 ;===============================================================================
 ;===============================================================================
+LoadText:
+    RW a8i16
 
+    WRAM_memset SHADOW_BG3_MAP, $700, $00
+    WRAM_memcpy SHADOW_BG3_MAP+( 8*(32*2)+10*2), (BG3_FRAME+(22*0)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+( 9*(32*2)+10*2), (BG3_FRAME+(22*1)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(10*(32*2)+10*2), (BG3_FRAME+(22*2)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(11*(32*2)+10*2), (BG3_FRAME+(22*3)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(12*(32*2)+10*2), (BG3_FRAME+(22*4)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(13*(32*2)+10*2), (BG3_FRAME+(22*5)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(14*(32*2)+10*2), (BG3_FRAME+(22*6)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(15*(32*2)+10*2), (BG3_FRAME+(22*7)), 22
+    WRAM_memcpy SHADOW_BG3_MAP+(16*(32*2)+10*2), (BG3_FRAME+(22*8)), 22
+
+
+    rts
 ;===============================================================================
 ;===============================================================================
 ProcessText:
-    RW_assume a8i8
     RW a16i16
     lda SFX_tick
     and #$000f
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+6
@@ -185,14 +229,14 @@ ProcessText:
     lsr
     lsr
     lsr
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+4
     
     lda SFX_tick+1
     and #$000f
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+2
@@ -204,27 +248,29 @@ ProcessText:
     lsr
     lsr
     lsr
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP
 
 
-    RW a8i8
+    RW a8i16
     rts
 
 ;===============================================================================
 ;===============================================================================
+.segment "LORAM"
+MENU_SELECTION:
+    .res 1
+
 .segment "RODATA"
-
-.macro  AsciiText Text, Param
-    .repeat .strlen(Text), I
-        .byte .strat(Text, I)
-        .byte (Param)
-    .endrep
-.endmacro
-
-TXT_TITLE: AsciiText "Rocket Dodge", $24
-TXT_TITLE_END:
-
-TXT_TITLE_SIZE = TXT_TITLE_END-TXT_TITLE
+BG3_FRAME:
+.word $2450, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2452
+.word $2460, $242b, $2442, $2436, $243e, $2438, $2447, $2400, $2467, $2400, $2462
+.word $2460, $24cd, $2400, $2400, $2400, $241d, $2442, $2437, $243a, $2438, $2462
+.word $2463, $2451, $245f, $2451, $2451, $2451, $2451, $2451, $2451, $2451, $2465
+.word $2460, $244f, $2466, $242c, $2447, $2434, $2445, $2447, $2400, $2400, $2462
+.word $2460, $244f, $2466, $242c, $2436, $2442, $2445, $2438, $2446, $2400, $2462
+.word $2460, $244f, $2466, $241c, $2445, $2438, $2437, $243c, $2447, $2446, $2462
+.word $2460, $244f, $2466, $241b, $2442, $2441, $2448, $2446, $2400, $2400, $2462
+.word $2470, $2471, $247f, $2471, $2471, $2471, $2471, $2471, $2471, $2471, $2472

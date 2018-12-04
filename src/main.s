@@ -8,7 +8,24 @@
 Main:
     RW a8i16
     jsr StatesMenuInit
+
+
+    ;Set VBlank handler
+    VBL_set VerticalBlank
+    ;Turn on screen
+    lda     #inidisp(ON, DISP_BRIGHTNESS_MAX)
+    sta     SFX_inidisp
+    VBL_on
+:   wai
+    bra     :-
+
+    ;jsr StatesGameInit
     rtl
+
+VerticalBlank:
+    RW a8i16
+	jsr StatesMenuLoop
+	rtl
 
 ;===============================================================================
 .segment "LORAM"

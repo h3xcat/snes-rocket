@@ -36,7 +36,7 @@ data/bg_ascii.png.palette: palette_flags = -v --no-remap
 
 data/bg_stars1.png.tiles: tiles_flags = -v --bpp 4 --tile-width 16 --tile-height 16
 data/bg_stars2.png.tiles: tiles_flags = -v --bpp 4 --tile-width 16 --tile-height 16
-data/bg_ascii.png.tiles: tiles_flags = -v --no-discard --no-flip --bpp 2 --tile-width 8 --tile-height 8
+data/bg_ascii.png.tiles: tiles_flags = -v --no-discard --bpp 2 --tile-width 8 --tile-height 8
 data/fg_sprites.png.tiles: tiles_flags = -v --no-discard
 
 data/bg_stars1.png.map: map_flags = -v --map-width 32 --map-height 32

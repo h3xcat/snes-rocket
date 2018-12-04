@@ -1,5 +1,6 @@
 .include "libsfx.i"
 .include "game.i"
+.include "../main.i"
 
 .include "shared/sprites.i"
 .include "shared/random.i"
@@ -21,25 +22,6 @@ VRAM_OBJ_TILES  = $8000
 CGRAM_BG        = $0000
 CGRAM_OBJ       = $0080
 
-;JOY BIT MASKS
-BUTTON_B        = $8000
-BUTTON_Y        = $4000
-BUTTON_SELECT   = $2000
-BUTTON_START    = $1000
-BUTTON_UP       = $0800
-BUTTON_DOWN     = $0400
-BUTTON_LEFT     = $0200
-BUTTON_RIGHT    = $0100
-BUTTON_A        = $0080
-BUTTON_X        = $0040
-BUTTON_L        = $0020
-BUTTON_R        = $0010
-
-
-GAMESTATE_START = $00
-GAMESTATE_SCORE = $01
-GAMESTATE_GAME  = $02
-GAMESTATE_END   = $03
 
 .define ScreenTop       239
 .define ScreenBottom    224
@@ -129,16 +111,6 @@ StatesGameInit:
     lda     #tm(ON, ON, ON, OFF, ON)
     sta     TM
 
-    ;Set VBlank handler
-    VBL_set StatesGameLoop
-
-    ;Turn on screen
-    lda     #inidisp(ON, DISP_BRIGHTNESS_MAX)
-    sta     SFX_inidisp
-    VBL_on
-:   wai
-    bra     :-
-
     WRAM_memset SHADOW_BG3_MAP, $700, $00
 
 
@@ -155,7 +127,7 @@ StatesGameLoop:
     OAM_memcpy SHADOW_OAM
     VRAM_memcpy VRAM_BG3_MAP, SHADOW_BG3_MAP, $700
 
-	rtl
+	rts
 
 ;===============================================================================
 ;===============================================================================
@@ -164,7 +136,7 @@ ProcessText:
     RW a16i16
     lda SFX_tick
     and #$000f
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+6
@@ -176,14 +148,14 @@ ProcessText:
     lsr
     lsr
     lsr
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+4
     
     lda SFX_tick+1
     and #$000f
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP+2
@@ -195,7 +167,7 @@ ProcessText:
     lsr
     lsr
     lsr
-    adc #$80
+    adc #$10
     and #$ff
     ora #$2400
     sta SHADOW_BG3_MAP
@@ -370,10 +342,6 @@ FinishPlayerProcess:
 ;===============================================================================
 ;===============================================================================
 .segment "LORAM"
-SHADOW_OAM:    
-    .res $220
-SHADOW_BG3_MAP:
-    .res $700
 GAME_SCORE:
     .res $2
 GAME_STATE:
